@@ -1,4 +1,4 @@
-const mainMenu = require("./promptUser");
+const { mainMenu, promptDepartment } = require("./promptUser");
 const mysql = require("mysql2/promise");
 const cTable = require("console.table");
 
@@ -33,8 +33,7 @@ async function viewAllRoles() {
 async function viewAllEmployees() {
     const sql = `SELECT E1.id, E1.first_name AS emp_first_name,
         E1.last_name AS emp_last_name, department.name AS department_name, role.title,
-        role.salary, E2.first_name AS mgr_first_name,
-        E2.last_name AS mgr_last_name
+        role.salary, E2.first_name AS mgr_first_name, E2.last_name AS mgr_last_name
         FROM employee E1
         LEFT JOIN role ON E1.role_id = role.id
         LEFT JOIN employee E2 ON E1.manager_id = E2.id
@@ -42,6 +41,15 @@ async function viewAllEmployees() {
 
         let [rows, fields] = await db.execute(sql);
         console.log(cTable.getTable(rows));
+}
+
+async function addDepartment() {
+    let department = await promptDepartment();
+
+    const sql = `INSERT INTO department (name) VALUES (?)`;
+    let [err] = await db.execute(sql, department);
+
+    await viewAllDepartments();
 }
 
 async function main() {
@@ -59,6 +67,11 @@ async function main() {
         
         case "View all employees":
             await viewAllEmployees();
+            main();
+            break;
+        
+        case "Add a department":
+            await addDepartment();
             main();
             break;
         

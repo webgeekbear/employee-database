@@ -1,4 +1,5 @@
 const inquirer = require('inquirer');
+const { skipPartiallyEmittedExpressions } = require('typescript');
 
 const menu = [{
     type: "list",
@@ -21,4 +22,23 @@ async function mainMenu() {
     return myChoice.choice;
 }
 
-module.exports = mainMenu;
+const deptPrompt = [{
+    type: "input",
+    name: "department",
+    message: "Department name?",
+    validate: dept => {
+        if (dept.trim()) {
+            return true;
+        } else {
+            console.log('You need to enter a department name!');
+            return false;
+        }
+    }
+}];
+
+async function promptDepartment() {
+    let myChoice = await inquirer.prompt(deptPrompt);
+    return [ myChoice.department ];
+}
+
+module.exports = { mainMenu, promptDepartment };

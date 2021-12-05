@@ -1,5 +1,4 @@
 const db = require("./db/connection");
-const cTable = require("console.table");
 
 function viewAllDepartments() {
     const sql = `select * from department`;
