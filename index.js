@@ -31,9 +31,9 @@ async function viewAllRoles() {
 }
 
 async function viewAllEmployees() {
-    const sql = `SELECT E1.id, E1.first_name AS emp_first_name,
-        E1.last_name AS emp_last_name, department.name AS department_name, role.title,
-        role.salary, E2.first_name AS mgr_first_name, E2.last_name AS mgr_last_name
+    const sql = `SELECT E1.id, E1.first_name AS first_name,
+        E1.last_name AS last_name, department.name AS department_name, role.title,
+        role.salary, CONCAT(E2.first_name, ' ', E2.last_name) AS manager
         FROM employee E1
         LEFT JOIN role ON E1.role_id = role.id
         LEFT JOIN employee E2 ON E1.manager_id = E2.id
