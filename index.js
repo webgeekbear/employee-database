@@ -5,7 +5,10 @@ const {
 const mysql = require("mysql2/promise");
 const cTable = require("console.table");
 const inquirer = require("inquirer");
+const db = require("./db/connection");
+// console.log("db is " + db);
 
+/*
 let db;
 
 async function createConnection() {
@@ -18,6 +21,7 @@ async function createConnection() {
 }
 
 createConnection();
+*/
 
 /**
  * 
@@ -183,6 +187,68 @@ async function addEmployee() {
     await viewAllEmployees();
 }
 
+async function updateEmployeeRole() {
+    const sql = `SELECT role.id, CONCAT(department.name, " ", title, " ", salary) AS role_text FROM role
+                LEFT JOIN department ON department_id = department.id`;
+    let [rows, fields] = await db.execute(sql);
+
+    const roleRows = rows;
+    let roleArray = [];
+
+    for (let i = 0; i < roleRows.length; i++) {
+        roleArray.push(roleRows[i].role_text);
+    }
+
+    const sql2 = `SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee`;
+    let [rows2, fields2] = await db.execute(sql2);
+    
+    const employeeRows = rows2;
+
+    let employeeArray = [];
+
+    for (let i = 0; i < employeeRows.length; i++) {
+        employeeArray.push(employeeRows[i].name);
+    }
+
+    const employeePrompts = [{
+            type: "list",
+            message: "Select an employee",
+            name: "employee",
+            choices: employeeArray
+        },
+        {
+        type: "list",
+        message: "Select a role for the employee",
+        name: "role",
+        choices: roleArray
+    }
+    ];
+    let data = await inquirer.prompt(employeePrompts);
+
+    let roleId = null;
+
+    for (let i = 0; i < roleRows.length; i++) {
+        if (roleRows[i].role_text === data.role) {
+            roleId = roleRows[i].id;
+            break;
+        }
+    }
+
+    let employeeId = null;
+    for (let i = 0; i < employeeRows.length; i++) {
+        if (employeeRows[i].name === data.employee) {
+            employeeId = employeeRows[i].id;
+            break;
+        }
+    }
+
+    const sql3 = `UPDATE employee SET role_id = ? WHERE id = ?`;
+    const values = [ roleId, employeeId ];
+    let [err] = await db.execute(sql3, values);
+
+    await viewAllEmployees();
+}
+
 async function viewAllDepartments() {
     const sql = `SELECT * FROM department`;
 
@@ -198,6 +264,12 @@ async function viewAllRoles() {
     console.log(cTable.getTable(rows));
 }
 
+function findAllEmployees() {
+    return this.connection.promise().query(
+      "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role on employee.role_id = role.id LEFT JOIN department on role.department_id = department.id LEFT JOIN employee manager on manager.id = employee.manager_id;"
+    );
+}
+  
 async function viewAllEmployees() {
     const sql = `SELECT E1.id, E1.first_name AS first_name,
         E1.last_name AS last_name, department.name AS department_name, role.title,
@@ -207,8 +279,14 @@ async function viewAllEmployees() {
         LEFT JOIN employee E2 ON E1.manager_id = E2.id
         LEFT JOIN department ON role.department_id = department.id`
 
-    let [rows, fields] = await db.execute(sql);
+    let [rows, fields] = /* await */ db.execute(sql);
     console.log(cTable.getTable(rows));
+    // let rows = db.promise().query(
+    //     "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role on employee.role_id = role.id LEFT JOIN department on role.department_id = department.id LEFT JOIN employee manager on manager.id = employee.manager_id;"
+    // );
+    
+    // console.log(cTable.getTable(rows));
+  
 }
 
 async function addDepartment() {
@@ -250,6 +328,11 @@ async function main() {
 
         case "Add an employee":
             await addEmployee();
+            main();
+            break;
+        
+        case "Update an employee role":
+            await updateEmployeeRole();
             main();
             break;
         
