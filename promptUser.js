@@ -1,5 +1,4 @@
 const inquirer = require('inquirer');
-const { skipPartiallyEmittedExpressions } = require('typescript');
 
 const menu = [{
     type: "list",
