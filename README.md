@@ -16,6 +16,6 @@ npm install
 node index.js
 
 ## Technologies
-Node.js, MySQL, ES6, 
+Node.js, MySQL, ES6, Inquirer.js, mysql2.js
 ## Video
 The video for this project can be viewed at https://watch.screencastify.com/v/WWBmP7BXr0YImiOYUwaC
