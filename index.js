@@ -5,10 +5,7 @@ const {
 const mysql = require("mysql2/promise");
 const cTable = require("console.table");
 const inquirer = require("inquirer");
-const db = require("./db/connection");
-// console.log("db is " + db);
 
-/*
 let db;
 
 async function createConnection() {
@@ -21,17 +18,16 @@ async function createConnection() {
 }
 
 createConnection();
-*/
 
 /**
  * 
  * @param { string } str String to test
- * @returns true if a number, false if not
+ * @returns true if a non-zero number, false if not
  * 
  * Determine if the string passed in is a valid number
  * From https://stackoverflow.com/questions/175739/
  */
-function isNumeric(str) {
+function isNonZeroNumeric(str) {
     if (typeof str != "string") {
         str = "" + str; // we only process strings!
     }
@@ -44,6 +40,7 @@ function isNumeric(str) {
 }
 
 async function addRole() {
+    // Get all department names
     const sql = `SELECT id, name FROM department`;
     let [rows, fields] = await db.execute(sql);
 
@@ -69,7 +66,7 @@ async function addRole() {
         name: "salary",
         message: "Enter the salary",
         validate: inputSalary => {
-            if (isNumeric(inputSalary)) {
+            if (isNonZeroNumeric(inputSalary)) {
                 return true;
             }
             console.log(" Salary must be a non-zero number");
@@ -101,6 +98,7 @@ async function addRole() {
 }
 
 async function addEmployee() {
+    // Get all roles for all departments.
     const sql = `SELECT role.id, CONCAT(department.name, " ", title, " ", salary) AS role_text FROM role
                 LEFT JOIN department ON department_id = department.id`;
     let [rows, fields] = await db.execute(sql);
@@ -112,9 +110,12 @@ async function addEmployee() {
         roleArray.push(roleRows[i].role_text);
     }
 
+    // Get all employee names and IDs.
     const sql2 = `SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee`;
     let [rows2, fields2] = await db.execute(sql2);
     
+    // A manager is an employee that can be null.  
+    // Populate the array with all employees and "None".
     const employeeRows = rows2;
 
     let employeeArray = [];
@@ -172,6 +173,8 @@ async function addEmployee() {
         }
     }
 
+    // Note that "None" should not exist in the database. 
+    // That means if "None" is selected, managerId will be null.
     let managerId = null;
     for (let i = 0; i < employeeRows.length; i++) {
         if (employeeRows[i].name === data.manager) {
@@ -188,6 +191,7 @@ async function addEmployee() {
 }
 
 async function updateEmployeeRole() {
+    // Get all roles and associated IDs by department
     const sql = `SELECT role.id, CONCAT(department.name, " ", title, " ", salary) AS role_text FROM role
                 LEFT JOIN department ON department_id = department.id`;
     let [rows, fields] = await db.execute(sql);
@@ -199,6 +203,7 @@ async function updateEmployeeRole() {
         roleArray.push(roleRows[i].role_text);
     }
 
+    // Get all employees and associated IDs
     const sql2 = `SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee`;
     let [rows2, fields2] = await db.execute(sql2);
     
@@ -264,12 +269,6 @@ async function viewAllRoles() {
     console.log(cTable.getTable(rows));
 }
 
-function findAllEmployees() {
-    return this.connection.promise().query(
-      "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role on employee.role_id = role.id LEFT JOIN department on role.department_id = department.id LEFT JOIN employee manager on manager.id = employee.manager_id;"
-    );
-}
-  
 async function viewAllEmployees() {
     const sql = `SELECT E1.id, E1.first_name AS first_name,
         E1.last_name AS last_name, department.name AS department_name, role.title,
@@ -279,14 +278,8 @@ async function viewAllEmployees() {
         LEFT JOIN employee E2 ON E1.manager_id = E2.id
         LEFT JOIN department ON role.department_id = department.id`
 
-    let [rows, fields] = /* await */ db.execute(sql);
+    let [rows, fields] = await db.execute(sql);
     console.log(cTable.getTable(rows));
-    // let rows = db.promise().query(
-    //     "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role on employee.role_id = role.id LEFT JOIN department on role.department_id = department.id LEFT JOIN employee manager on manager.id = employee.manager_id;"
-    // );
-    
-    // console.log(cTable.getTable(rows));
-  
 }
 
 async function addDepartment() {
